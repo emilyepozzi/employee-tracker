@@ -1,5 +1,7 @@
 //mysql connection
 
+const inquirer = require("inquirer");
+
 //inquirer to ask questions
 //function to initialize application
 function init() {
@@ -92,4 +94,41 @@ function viewDepartments() {
     })
 };
 
-function view
+function viewRoles() {
+    const roleQuery = 'SELECT * FROM role'
+    connection.query(roleQuery, (err, data) => {
+        if (err) throw err;
+        console.table(data);
+        init();
+    })
+};
+
+//function to display employees by department 
+function displayEmByDep() {
+    const depQuery1 = ("SELECT * FROM department");
+
+    connection.query(depQuery1, (err, response) => {
+        if (err) throw err;
+        const departments = response.map(element => {
+            return {name: '${element.name}' }
+        });
+
+        inquirer.prompt([{
+            type: "list",
+            name: "dept",
+            message: "Please select a department to view employees",
+            choices: departments
+
+        }]).then(answer => {
+            const depQuery2 = 'SELECT employee.first_name, emplyee.last_name, employee.role_id AS role, CONCAT(manager.first_name,' ', manager.last_name) AS manager, 
+            FROM employee LEFT JOIN role on employee.role_id = role.id
+            LEFT JOIN department ON role.department_id =department.id LEFT JOIN employee manager ON emplyee.manager_id=manager.id
+            WHERE ?'
+            connection.query(depQuery2, [{ name: answer.dept}], function (err, res) {
+                if (err) throw err;
+                console.table(res)
+                init();
+            })
+        })
+    })
+};
