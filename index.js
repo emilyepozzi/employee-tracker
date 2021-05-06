@@ -1,6 +1,9 @@
 //mysql connection
-
+var mysql = require("mysql");
+var express = require("express");
 const inquirer = require("inquirer");
+const cTable = require("console.table");
+const { response } = require("express");
 
 //inquirer to ask questions
 //function to initialize application
@@ -131,4 +134,5 @@ function displayEmByDep() {
             })
         })
     })
-};
+
+    ;
