@@ -1,17 +1,26 @@
+//saves passwords and data
+require('dotenv').config();
+
 //mysql connection
-var mysql = require("mysql");
-var express = require("express");
+var mysql = require("mysql2");
+// var express = require("express");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
-const { response } = require("express");
+// const { response } = require("express");
 
 var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
-    password: "password",
+    password: process.env.db_pass,
     database: "employee_tracker_db"
 })
+
+connection.connect(function(err){
+    if (err) throw err;
+    console.log("App is connected")
+    init()
+});
 
 //inquirer to ask questions
 //function to initialize application
@@ -38,56 +47,57 @@ function init() {
                 break;
 
             case "View All Employees By Department":
-            displayEmByDep();
+                displayEmByDep();
             break;
 
             case "View All Employees By Manager":
-            displayEmByManager();
+                displayEmByManager();
             break;
 
             case "Add Employee":
-            addEmployee();
+                addEmployee();
             break;
 
             case "Remove Employee":
-            removeEmployee();
+                removeEmployee();
             break;
 
             case "Update Employee Role":
-            updateEmpRole();
+                updateEmpRole();
             break;
 
             case "Add Employee Role":
-            addRole();
+                addRole();
             break;
 
             case "Remove Role":
-            removeRole();
+                removeRole();
             break;
 
             case "Add New Department":
-            addDepartment();
+                addDepartment();
             break;
 
             case "Remove Department":
-            removeDept();
+                removeDept();
             break;
 
             case "Update Employee Manager":
-            updateEmpManager();
+                updateEmpManager();
             break;
+            //make a default to exit application and quit mysql connection
         }
     })
 };
 
 //functions for each(8) actions
 function displayEmployees() {
-    const emQuery = 'SELECT employee.id, employee.first_name, employee.last_name, role.title AS role, 
+    const emQuery = `SELECT employee.id, employee.first_name, employee.last_name, role.title AS role, 
     CONCAT(manager.first_name,' ', manager.last_name) AS manager, department.name
     FROM employee
     LEFT JOIN role ON employee.role_id = role.id
     LEFT JOIN department ON role.department_id = department.id
-    LEFT JOIN employee manager ON employee.manager_id = manager.id'
+    LEFT JOIN employee manager ON employee.manager_id = manager.id`
 
     connection.query(emQuery, (err, data) => {
         if (err) throw err;
@@ -131,58 +141,60 @@ function displayEmByDep() {
             choices: departments
 
         }]).then(answer => {
-            const depQuery2 = 'SELECT employee.first_name, emplyee.last_name, employee.role_id AS role, CONCAT(manager.first_name,' ', manager.last_name) AS manager, 
+            const depQuery2 = `SELECT employee.first_name, employee.last_name, employee.role_id AS role, CONCAT(manager.first_name,' ', manager.last_name) AS manager, 
             FROM employee LEFT JOIN role on employee.role_id = role.id
-            LEFT JOIN department ON role.department_id =department.id LEFT JOIN employee manager ON emplyee.manager_id=manager.id
-            WHERE ?'
+            LEFT JOIN department ON role.department_id =department.id LEFT JOIN employee manager ON employee.manager_id=manager.id
+            WHERE ?`
             connection.query(depQuery2, [{ name: answer.dept}], function (err, res) {
                 if (err) throw err;
                 console.table(res)
                 init();
             })
         })
-    });
+    })
+};
 
-    //funct to display employees by manager
-    function displayEmByManager() {
-        let query1 = 'SELECT * FROM employee e WHERE e.manager_id IS NULL'
+//funct to display employees by manager
+function displayEmByManager() {
+    let query1 = 'SELECT * FROM employee e WHERE e.manager_id IS NULL';
 
-        connection.query(query1, function (err, res) {
-            if (err) throw err;
-            const managers = res.map(function (element) {
-                return {
-                    name: '${element.first_name} ${element.last_name}',
-                    value: element.id
-                }
-            });
-            inquirer.prompt([{
-                type: "list",
-                name: "emByManager",
-                message: "Please select manager to view employees",
-                choices: managers
-            }])
-            .then(response => {
-                console.log(response.emByManager)
-                let query2 = 'SELECT emplyee.id, employee.first_name, employee.last_name, employee.role_id AS role, CONCAT(manager.first_name, ' ', manager.last_name)
-                LEFT JOIN role on employee.role_id = role.id
-                LEFT JOIN department on department.id = role.department_id
-                LEFT JOIN employee manager on employee.manager_id = manager.id
-                WHERE employee.manager_id = ?'
-                connection.query(query2, [response.emByManager], (err, data) => {
-                    if (err) throw err;
-                    console.table(data);
-                    init()
-                })
+    connection.query(query1, function (err, res) {
+        if (err) throw err;
+        const managers = res.map(function (element) {
+            return {
+                name: '${element.first_name} ${element.last_name}',
+                value: element.id
+            }
+        });
+
+        inquirer.prompt([{
+            type: "list",
+            name: "emByManager",
+            message: "Please select manager to view employees",
+            choices: managers
+        }])
+        .then(response => {
+            console.log(response.emByManager)
+            let query2 = `SELECT employee.id, employee.first_name, employee.last_name, employee.role_id AS role, CONCAT(manager.first_name, ' ', manager.last_name)
+            LEFT JOIN role on employee.role_id = role.id
+            LEFT JOIN department on department.id = role.department_id
+            LEFT JOIN employee manager on employee.manager_id = manager.id
+            WHERE employee.manager_id = ?`
+            connection.query(query2, [response.emByManager], (err, data) => {
+                if (err) throw err;
+                console.table(data);
+                init()
             })
         })
-    };
+    })
+};
 
 //function to add a new employee
 function addEmployee() {
-    let addQuery = 'SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, department.name, role.salary, employee.manager_id
-    FROM emplyee
+    let addQuery = `SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, role.title, department.name, role.salary, employee.manager_id
+    FROM employee
     INNER JOIN role on role.id = employee.role_id
-    INNER JOIN department ON department.id = role.department_id'
+    INNER JOIN department ON department.id = role.department_id`
     connection.query(addQuery, (err, results) => {
         if (err) throw err;
         inquirer.prompt([
@@ -205,18 +217,19 @@ function addEmployee() {
                 type: "input",
                 name: "manager",
                 message: "Please enter employee manager id"
-            }])
-            .then(answer => {
-                console.log(answer);
-                connection.query(
-                    "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)",
-                    [answer.first_name, answer.last_name, answer.role, answer.manager],
-                    function (err) {
-                        if (err) throw err
-                        console.log('${answer.first_name} ${answer.last_name} added as a new employee')
-                        init();
-                    } 
-                )
-            })
+            }
+        ])
+        .then(answer => {
+            console.log(answer);
+            connection.query(
+                "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)",
+                [answer.first_name, answer.last_name, answer.role, answer.manager],
+                function (err) {
+                    if (err) throw err
+                    console.log('${answer.first_name} ${answer.last_name} added as a new employee')
+                    init();
+                } 
+            )
+        })
     })
 };
