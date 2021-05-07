@@ -5,6 +5,14 @@ const inquirer = require("inquirer");
 const cTable = require("console.table");
 const { response } = require("express");
 
+var connection = mysql.createConnection({
+    host: "localhost",
+    port: 3306,
+    user: "root",
+    password: "password",
+    database: "employee_tracker_db"
+})
+
 //inquirer to ask questions
 //function to initialize application
 function init() {
