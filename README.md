@@ -36,5 +36,5 @@ THEN I am prompted to select an employee to update and their new role and this i
 Navigate to the root folder of application and use node index.js in the command line to start the server. Then follow the prompts.
 
 ## How To Video
-
+https://drive.google.com/file/d/1qnNBQ37w09qKw2ZMrjwuzBSJiFzG6ctV/view
 
